@@ -21,6 +21,7 @@ How does deps work then?
 --------------------------
 deps is designed as a single-file library with a simple, but flexible API. This means it's easy to ship with your project so your users do not need to install more software than just a Python interpreter to build. A project using deps typically only has two files: deps.py and your build script, let's say build.py. As an example, here's a complete build script for a simple hello world C project:
 
+```python
     import deps
     
     deps.process("*.o", deps.c_compiler, "{p}.c")
@@ -28,6 +29,7 @@ deps is designed as a single-file library with a simple, but flexible API. This 
     deps.process(":clean", deps.auto_clean)
     
     deps.build()
+```
 
 To build your project you'd simply type `python build.py`. By default deps will build all files that are not an input for something else - all endresults. globs are not considered for this - endresults have to be concrete. To clean up the code repository you'd write `python build.py :clean`.
 
