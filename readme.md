@@ -30,7 +30,7 @@ deps.process(":clean", deps.auto_clean)
 deps.build()
 ```
 
-To build your project you'd simply type `python build.py`. By default deps will build all files that are not an input for something else - all endresults. globs/function outputs are not considered for this - endresults have to be concrete. To clean up the code repository you'd write `python build.py :clean`.
+To build your project you'd simply type `python build.py`. By default deps will build all explicit files that are not an input for something else - all endresults. To clean up the code repository you'd write `python build.py :clean`.
 
 Each process you define will require any amount of inputs (also called dependencies) and produce one output. By default inputs and outputs are assumed to be files, but they can be virtual as well, for example a process that only sets up environment variables will have a virtual output. Virtual inputs/outputs are prefixed with a `:`. To match an output you can also use Unix-style globs as well as a boolean matching function that returns True if it matches the requested output. For each string input `.format` will be called with `o`, `p`, `d`, `f`, `e` respectively defined as the original output, the full path of the output minus extension, its containing directory (without trailing slash), the filename and its extension without a dot. For virtual inputs only `v` is defined, set to the output name without colon. It is also possible to pass a function as input, it will be called with a dictionary filled with the above parameters and its results are used as inputs.
 
