@@ -4,18 +4,15 @@ _deps_ is a minimalistic building system for any process which consists of small
 
 deps is not a "framework" or a "software package". It is a library to write your own build scripts. This means that you have full control, even over the interface.
 
-Can deps only be used for Python?
------------------------------------
+###Can deps only be used for Python?
 __No!__ In fact, I suspect that it will be _less_ used for Python projects than others, as Python projects typically do not have a build step. deps is targeted to be used for projects that have processes that have many dependent substeps, such as compiled languages like C/C++. But deps is by design language-agnostic, so you can use it for compressing and emailing log files, your LaTeX builds, etc.
 
-Does deps use makefiles?
---------------------------
+###Does deps use makefiles?
 __No.__ Makefiles are a common anti-pattern seen with other build tools that deps tries to avoid. They insult the programmers capability of problem solving by replacing a programming language with a very inflexible fixed format. They might seem a good idea because they are so _readable and terse_, but this advantage quickly disappears as the makefile grows in size and complexity.
 
 Instead, deps is a self-contained single-file Python module. Your actual build script can be contained in one, or if you so prefer, multiple files.
 
-Will deps automatically find compilers, libraries and headers?
-----------------------------------------------------------------
+###Will deps automatically find compilers, libraries and headers?
 __Not really.__ To keep things simple and abstract deps is deliberately designed to __not__ be an "autoconf" tool. Build environments are very complicated and differ wildy from project to project and platform to platform. Trying to use tools that claim to set up a "write once, build everywhere" environment often requires more time and effort than to write a simple script to resolve the non-portable aspects, if you succeed at all.
 
 However, I am a strong believer in "sane defaults". deps ships with some default process templates for common tasks like executing a shell command, compiling a C or C++ file and linking object files. These templates are very simple - they are designed to get you through a simple project, but it's expected that a more complicated project will take these as a base and extend them with more options. This is core throughout deps's design: everything works out of the box, but you can hook and extend it all.
