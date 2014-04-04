@@ -17,9 +17,8 @@ __Not really.__ To keep things simple and abstract deps is deliberately designed
 
 However, I am a strong believer in "sane defaults". deps ships with some default process templates for common tasks like executing a shell command, compiling a C or C++ file and linking object files. These templates are very simple - they are designed to get you through a simple project, but it's expected that a more complicated project will take these as a base and extend them with more options. This is core throughout deps's design: everything works out of the box, but you can hook and extend it all.
 
-How does deps work then?
---------------------------
-deps is designed as a single-file library with a simple, but flexible API. This means it's easy to ship with your project so your users do not need to install more software than just a Python interpreter to build. A project using deps typically only has two files: deps.py and your build script, let's say build.py. As an example, here's a complete build script for a simple hello world C project:
+###How does deps work then?
+deps is designed as a single-file library with a simple, but flexible API. This means it's easy to ship with your project so your users do not need to install more software than just a Python interpreter to build. A project using deps typically only has two files: `deps.py` and your build script, let's say `build.py`. As an example, here's a complete build script for a simple hello world C project:
 
 ```python
 import deps
@@ -31,9 +30,7 @@ deps.process(":clean", deps.auto_clean)
 deps.build()
 ```
 
-To build your project you'd simply type `python build.py`. By default deps will build all files that are not an input for something else - all endresults. globs are not considered for this - endresults have to be concrete. To clean up the code repository you'd write `python build.py :clean`.
-
-
+To build your project you'd simply type `python build.py`. By default deps will build all files that are not an input for something else - all endresults. globs/function outputs are not considered for this - endresults have to be concrete. To clean up the code repository you'd write `python build.py :clean`.
 
 Each process you define will require any amount of inputs (also called dependencies) and produce one output. By default inputs and outputs are assumed to be files, but they can be virtual as well, for example a process that only sets up environment variables will have a virtual output. Virtual inputs/outputs are prefixed with a `:`. To match an output you can also use Unix-style globs as well as a boolean matching function that returns True if it matches the requested output. For each string input `.format` will be called with `o`, `p`, `d`, `f`, `e` respectively defined as the original output, the full path of the output minus extension, its containing directory (without trailing slash), the filename and its extension without a dot. For virtual inputs only `v` is defined, set to the output name without colon. It is also possible to pass a function as input, it will be called with a dictionary filled with the above parameters and its results are used as inputs.
 
