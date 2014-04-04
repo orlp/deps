@@ -3,7 +3,7 @@
 
 deps
 ======
-_deps_ is a minimalistic building system for any process which consists of smaller processes that depend on eachother. You define processes and their dependencies, ask for an endresult, and deps will figure out which processes should be executed, and in what order. It works very similar to GNU make, but operates in an Python environment rather than the shell, and should run on any platform capable of running Python without any other dependencies.
+_deps_ is a minimalistic building system for any process which consists of smaller processes that depend on each other. You define processes and their dependencies, ask for an endresult, and deps will figure out which processes should be executed, and in what order. It works very similar to GNU make, but operates in an Python environment rather than the shell, and should run on any platform capable of running Python without any other dependencies.
 
 deps is not a "framework" or a "software package". It is a library to write your own build scripts. This means that you have full control, even over the interface.
 
