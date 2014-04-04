@@ -47,7 +47,7 @@ deps works in two phases. In the first phase it will scan for dependencies, star
 The second phase will determine which processes actually need to be run and run them. A process will run if any of the following are true:
 
 1. It has no inputs.
-2. It has a virtual output that is needed.
+2. It has a virtual output.
 3. The process has a virtual input and the process that produced the virtual input has run.
 4. All processes that produce the dependencies of the process have conclusively run or not run. An output file of this process has a last-written timestamp older than an input file.
 

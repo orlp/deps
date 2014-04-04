@@ -1,75 +1,146 @@
-import os
-import subprocess
 import collections
+import fnmatch
+import os
+
+class Deps(object):
+    Process = collections.namedtuple("Process", ["output", "func", "deps", "should_run"])
+
+    def __init__(self):
+        self.processes = []
+
+    def process(self, output, func, *deps, **kwargs):
+        self.processes.insert(0, self.Process(output, func, deps, kwargs.get("should_run", lambda yn: yn)))
+
+    def build(self, *endresults, **kwargs):
+        parallel = kwargs.get("parallel", 4)
+
+        # first get all the processes that need to run to satisfy all dependencies
+        # we also detect any missing/cyclic dependencies at this stage
+        processes, consumers = self._resolve_deps(list(endresults))
+        ready_to_run = [process for process in processes if not process.deps]
+        outputs_handled = set()
+        outputs_run = set()
+
+        while ready_to_run:
+            process = ready_to_run.pop()
+
+            if self._should_run(process, outputs_run):
+                result = process.func(process.output, process.deps)
+                outputs_run.add(process.output)
+
+            outputs_handled.add(process.output)
+
+            for consumer in consumers[process.output]:
+                for dep in consumer.deps:
+                    if dep not in outputs_handled: break
+                else:
+                    ready_to_run.append(consumer)
+
+            del consumers[process.output]
+
+    def _resolve_deps(self, unresolved_deps):
+        processes, consumers = [], collections.defaultdict(list)
+        resolved_deps = set()
+
+        while unresolved_deps:
+            unresolved_dep = unresolved_deps.pop()
+            if unresolved_dep in resolved_deps: continue
+
+            process = self._get_process_for_dep(unresolved_dep)
+            processes.append(process)
+            resolved_deps.add(unresolved_dep)
+
+            for dep in process.deps:
+                if dep in unresolved_deps:
+                    raise Exception("cyclic dependency while attempting to resolve resource \"{}\"".format(dep))
+
+                consumers[dep].append(process)
+                unresolved_deps.append(dep)
+
+        return processes, consumers
+
+    def _get_process_for_dep(self, dep):
+        for process in self.processes:
+            if (
+                hasattr(process.output, "__call__") and process.output(dep) or
+                dep == process.output or
+                not dep.startswith(":") and fnmatch.fnmatch(dep, process.output)
+            ):
+                return self.Process(dep, process.func, self._format_deps(process.output, process.deps), process.should_run)
+
+        if not dep.startswith(":") and os.path.exists(dep):
+            return self.Process(dep, lambda out, deps: None, [], lambda yn: yn)
+ 
+        raise Exception("no process found producing \"{}\"".format(dep))
+
+    def _format_deps(self, output, deps):
+        if output.startswith(":"):
+            params = {"v": output[1:]}
+        else:
+            params = {
+                "o": output,
+                "p": os.path.splitext(output)[0],
+                "d": os.path.dirname(output),
+                "f": os.path.basename(output),
+                "e": os.path.splitext(output)[1][1:],
+            }
+
+        return [dep.format(**params) for dep in deps]
+
+    def _should_run(self, process, outputs_run):
+        run = False
+
+        if not process.deps:
+            run = True
+        elif process.output.startswith(":"):
+            run = True
+        elif any(dep.startswith(":") and dep in outputs_run for dep in process.deps):
+            run = True
+        else:
+            try:
+                last_modification = os.path.getmtime(process.output)
+            except os.error:
+                run = True
+            else:
+                for dep in process.deps:
+                    if dep.startswith(":"): continue
+
+                    try:
+                        last_modification_dep = os.path.getmtime(dep)
+                    except os.error:
+                        run = True
+                        break
+                    else:
+                        if last_modification <= last_modification_dep:
+                            run = True
+                            break
+
+        return process.should_run(run)
+
+
+_main_deps = Deps()
+
+def process(*args, **kwargs):
+    _main_deps.process(*args, **kwargs)
+
+def build(*args, **kwargs):
+    _main_deps.build(*args, **kwargs)
+
+
+
+
+import subprocess
 import platform
 
-if platform.system() == "Windows":
-    executable_ext = ".exe"
-else:
-    executable_ext = ""
-
-def ccompiler(target_name, deps):
+def c_compiler(target_name, deps):
     print("compiling {}, {}".format(target_name, " ".join(deps)))
     subprocess.call(["gcc", "-o", target_name, "-c"] + deps)
 
-def linker(target_name, deps):
+def c_linker(target_name, deps):
+    if platform.system() == "Windows":
+        executable_ext = ".exe"
+    else:
+        executable_ext = ""
+
     print("linking {}, {}".format(target_name, " ".join(deps)))
-    subprocess.call(["gcc", "-o", target_name] + deps)
-
-class Project(object):
-    Target = collections.namedtuple("Target", ["name", "deps", "builder"])
-
-    def __init__(self):
-        self.targets = {}
-
-    def target(self, target_name, builder, deps=None):
-        if target_name in self.targets:
-            print("warning - duplicate target name, overriding previous settings: \"{}\"".format(target_name))
-
-        self.targets[target_name] = self.Target(target_name, self._flatten(deps), builder)
-
-    def build(self, end_targets=None):
-        if end_targets is None:
-            all_depencies = set(sum((target.deps for target in self.targets.values()), []))
-            end_targets = [target.name for target in self.targets.values() if target.name not in all_depencies]
-        else:
-            end_targets = flatten(end_targets)
-
-        if not end_targets:
-            raise Exception("no end targets found (cyclic dependency?)")
-
-        for target in end_targets:
-            try:
-                last_modification = os.path.getmtime(target)
-            except os.error:
-                last_modification = 0
-
-            self._build(end_targets, set(), last_modification)
-
-    def _build(self, targets, illegal_cyclic_deps, rebuild_threshold):
-        rebuild_needed = False
-
-        for target in targets:
-            if target not in self.targets:
-                if os.path.exists(target):
-                    last_modification = os.path.getmtime(target)
-                    rebuild_needed |= last_modification >= rebuild_threshold
-                else:
-                    raise Exception("no rule found to build \"{}\"".format(target))
-            else:
-                target = self.targets[target]
-                try:
-                    last_modification = os.path.getmtime(target.name)
-                except os.error:
-                    last_modification = 0
-
-                if not target.deps or self._build(target.deps, illegal_cyclic_deps | {target.name}, last_modification):
-                    rebuild_needed = not target.builder(target.name, target.deps)
-
-        return rebuild_needed or last_modification >= rebuild_threshold
-
-    def _flatten(self, deps):
-        if hasattr(deps, "__iter__"):
-            return sum((self._flatten(dep) for dep in deps), [])
-        
-        return deps and [deps] or []
+    subprocess.call(["gcc", "-o", target_name + executable_ext] + deps)
