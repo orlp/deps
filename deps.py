@@ -13,10 +13,11 @@ class Deps(object):
 
     def build(self, *endresults, **kwargs):
         parallel = kwargs.get("parallel", 4)
+        max_depth = kwargs.get("max_depth", 100)
 
         # first get all the processes that need to run to satisfy all dependencies
         # we also detect any missing/cyclic dependencies at this stage
-        processes, consumers = self._resolve_deps(list(endresults))
+        processes, consumers = self._resolve_deps(list(endresults), max_depth)
         ready_to_run = [process for process in processes if not process.deps]
         outputs_handled = set()
         outputs_run = set()
@@ -27,7 +28,9 @@ class Deps(object):
             if self._should_run(process, outputs_run):
                 result = process.func(process.output, process.deps)
                 outputs_run.add(process.output)
-
+                print("run: " + process.output)
+            else:
+                print("dont run: " + process.output)
             outputs_handled.add(process.output)
 
             for consumer in consumers[process.output]:
@@ -38,7 +41,7 @@ class Deps(object):
 
             del consumers[process.output]
 
-    def _resolve_deps(self, unresolved_deps):
+    def _resolve_deps(self, unresolved_deps, max_depth):
         processes, consumers = [], collections.defaultdict(list)
         resolved_deps = set()
 
@@ -51,11 +54,16 @@ class Deps(object):
             resolved_deps.add(unresolved_dep)
 
             for dep in process.deps:
-                if dep in unresolved_deps:
+                if dep in unresolved_deps or dep == process.output:
                     raise Exception("cyclic dependency while attempting to resolve resource \"{}\"".format(dep))
 
                 consumers[dep].append(process)
                 unresolved_deps.append(dep)
+
+            print(len(unresolved_deps))
+
+            if len(unresolved_deps) > max_depth:
+                raise Exception("max depth exceeded while attempting to resolve resource \"{}\"".format(dep))
 
         return processes, consumers
 
@@ -66,7 +74,7 @@ class Deps(object):
                 dep == process.output or
                 not dep.startswith(":") and fnmatch.fnmatch(dep, process.output)
             ):
-                return self.Process(dep, process.func, self._format_deps(process.output, process.deps), process.should_run)
+                return self.Process(dep, process.func, self._format_deps(dep, process.deps), process.should_run)
 
         if not dep.startswith(":") and os.path.exists(dep):
             return self.Process(dep, lambda out, deps: None, [], lambda yn: yn)
@@ -81,7 +89,7 @@ class Deps(object):
                 "o": output,
                 "p": os.path.splitext(output)[0],
                 "d": os.path.dirname(output),
-                "f": os.path.basename(output),
+                "f": os.path.splitext(os.path.basename(output))[0],
                 "e": os.path.splitext(output)[1][1:],
             }
 
@@ -132,15 +140,18 @@ def build(*args, **kwargs):
 import subprocess
 import platform
 
+if platform.system() == "Windows":
+    executable_ext = ".exe"
+else:
+    executable_ext = ""
+
+def auto_clean(target_name, deps):
+    pass
+
 def c_compiler(target_name, deps):
     print("compiling {}, {}".format(target_name, " ".join(deps)))
     subprocess.call(["gcc", "-o", target_name, "-c"] + deps)
 
 def c_linker(target_name, deps):
-    if platform.system() == "Windows":
-        executable_ext = ".exe"
-    else:
-        executable_ext = ""
-
     print("linking {}, {}".format(target_name, " ".join(deps)))
     subprocess.call(["gcc", "-o", target_name + executable_ext] + deps)
