@@ -95,15 +95,49 @@ p {
     margin-bottom: 1em;
 }
 
+/* responsive layout */
+nav {
+    position: absolute;
+    margin-left: 800px;
+    margin-top: 3em;
+    width: 250px;
+    padding: 0;
+    padding-right: 1em;
+}
 
-/* ==========================================================================
-   Author's custom styles
-   ========================================================================== */
+nav.sticky {
+    position: fixed;
+    top: 0;
+}
 
-main {
+main, header {
     max-width: 800px;
     margin: 0 auto;
     padding: 2em;
+}
+
+nav {
+    display: none;
+}
+
+@media only screen and (min-width: 1135px) {
+    header, main {
+        margin-right: 250px;
+    }
+
+    nav {
+        display: block;
+    }
+}
+
+@media only screen and (min-width: 1400px) {
+    header, main {
+        margin-right: auto;
+    }
+
+    nav {
+        display: block;
+    }
 }
 
 .cfname {
@@ -113,6 +147,8 @@ main {
 
 
 [id^=a\:] a {
+    line-height: 0;
+    font-family: "Segoe UI", Frutiger, "Frutiger Linotype", "Dejavu Sans", "Helvetica Neue", Arial, sans-serif;
     color: #ccc;
     border-bottom: none;
     visibility: hidden;
@@ -128,21 +164,9 @@ main {
 
 
 
-
-
-
-
-
-
-
-
 /* ==========================================================================
    Media Queries
    ========================================================================== */
-
-@media only screen and (min-width: 35em) {
-
-}
 
 @media print,
        (-o-min-device-pixel-ratio: 5/4),
