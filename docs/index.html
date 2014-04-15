@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>deps - a powerful Make replacement</title>
+        <meta name="description" content="deps is a powerful replacement for GNU Make using Python.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="css/normalize.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/highlight.css">
+
+        <script src="js/modernizr-2.6.2.min.js"></script>
+    </head>
+    <body>
+        <header>
+            <a href="https://github.com/nightcracker/deps"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+        </header>
+        <main>
+            <h1 id="a:deps">deps <a class="a" href="#a:deps">¶</a></h1>
+            <h2>A powerful make replacement</h2>
+            <p><em>deps</em> is a powerful replacement for Make using Python. Some major features are:</p>
+
+            <ul>
+                <li>lazy dependency resolving</li>
+                <li>automatic parallelization</li>
+                <li>circular dependency detection</li>
+                <li>complex relations through callbacks</li>
+            </ul>
+
+            <p>But the most important feature of all is that deps is a <strong>Python library</strong>. There are no
+            makefiles - you have the full power of Python at your disposal.</p>
+            <p>deps can be used with ease on any computer that has Python installed. It is a <a
+                href="https://raw.githubusercontent.com/nightcracker/deps/master/deps.py">single file library</a> that can
+            live within your poject and requires no installation.</p>
+
+            <h3 id="a:introduction">Introduction <a class="a" href="#a:introduction">¶</a></h3>
+            <p>With deps you work in a similar pattern to Make. You define <strong>rules</strong>. Each rule has an
+            <strong>output</strong>, zero or more <strong>dependencies</strong>, and a <strong>process</strong> that
+            produces the output. After defining the rules you ask for an endresult and deps will figure out which
+            processes need to run to satisfy all dependencies, and run them in an optimal order.</p>
+
+            <dl class="function">
+                <dt id="a:deps.rule">
+                    <tt>deps.</tt><tt class="cfname">rule</tt><tt>(output, dependencies, process[, run_callback])</tt>
+                    <a class="a" href="#a:deps.rule">¶</a>
+                </dt>
+                <dd>
+                <p>Adds a rule to the current environment. <code>output</code> is a string or a callable. If it's a
+                callable it will be called with a dependency as argument and should return <code>True</code> or
+                <code>False</code> depending on whether the match was succesful.</p>
+                </dd>
+            <dl>
+
+            <pre><code>import deps
+
+deps.rule("*.o", "{p}.c", deps.c_compiler)
+deps.rule("hello" + deps.executable_ext, "hello.o", deps.c_linker)
+
+deps.build("hello" + deps.executable_ext)</code></pre>
+        </main>
+
+        <script src="js/highlight.pack.js"></script>
+        <script src="js/main.js"></script>
+    </body>
+</html>

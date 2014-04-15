@@ -3,13 +3,14 @@ import fnmatch
 import os
 
 class Deps(object):
+    Rule = collections.namedtuple("Rule", ["output", "func", "deps", "should_run"])
     Process = collections.namedtuple("Process", ["output", "func", "deps", "should_run"])
 
     def __init__(self):
-        self.processes = []
+        self.rules = []
 
-    def process(self, output, func, *deps, **kwargs):
-        self.processes.insert(0, self.Process(output, func, deps, kwargs.get("should_run", lambda yn: yn)))
+    def rule(self, output, func, *deps, **kwargs):
+        self.rules.insert(0, self.Rule(output, func, deps, kwargs.get("should_run", lambda yn: yn)))
 
     def build(self, *endresults, **kwargs):
         parallel = kwargs.get("parallel", 4)
@@ -23,16 +24,19 @@ class Deps(object):
         outputs_run = set()
 
         while ready_to_run:
+            # get a process that is ready to run
             process = ready_to_run.pop()
 
+            # check if it should be run and if so, run it
             if self._should_run(process, outputs_run):
+                print("run: " + process.output)
                 result = process.func(process.output, process.deps)
                 outputs_run.add(process.output)
-                print("run: " + process.output)
             else:
                 print("dont run: " + process.output)
             outputs_handled.add(process.output)
 
+            # notify consumers
             for consumer in consumers[process.output]:
                 for dep in consumer.deps:
                     if dep not in outputs_handled: break
