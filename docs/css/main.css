@@ -162,6 +162,12 @@ nav {
     visibility: visible;
 }
 
+.bitcoin {
+    font-size: 0.6em;
+    line-height: 1.4em;
+    word-wrap: break-word;
+}
+
 
 
 /* ==========================================================================
