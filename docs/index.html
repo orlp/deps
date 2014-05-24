@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+        <title>deps - a powerful Make replacement</title>
+        <meta name="description" content="deps is a powerful replacement for GNU Make using Python.">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <link rel="stylesheet" href="css/normalize.min.css">
+        <link rel="stylesheet" href="css/main.css">
+        <link rel="stylesheet" href="css/highlight.css">
+
+        <script src="js/modernizr-2.6.2.min.js"></script>
+    </head>
+    <body>
+        <a href="https://github.com/nightcracker/deps"><img id="github-ribbon" src="img/github_ribbon.png" alt="Fork me on GitHub"></a>
+
+        <header>
+            <h1 id="a:deps">deps <a class="a" href="#">&para;</a></h1>
+            <h2>A powerful make replacement</h2>
+            <nav>
+                <ul>
+                    <li>Index:</li>
+                    <li><a href="#">deps</a></li>
+                    <li><a href="#a:introduction">Introduction</a></li>
+                    <li><a href="#a:api-documentation">API documentation</a></li>
+                    <li><a href="#a:license">License</a></li>
+                    <li><br></li>
+                    <li>Donate Bitcoin:</li>
+                    <li><p class="bitcoin">1HP4G3mcMrTztmpyUysNvs2dFa2CNForpF</p></li>
+                </ul>
+            </nav>
+        </header>
+        <main>
+            <p><em>deps</em> is a powerful replacement for Make using Python. Some major features are:</p>
+
+            <ul>
+                <li>lazy dependency resolving</li>
+                <li>automatic parallelization</li>
+                <li>circular dependency detection</li>
+                <li>complex relations through callbacks</li>
+            </ul>
+
+            <p>But the most important feature of all is that deps is a <strong>Python library</strong>. There are no
+            makefiles - you have the full power of Python at your disposal.</p>
+            <p>deps can be used with ease on any computer that has Python installed. It is a <a
+                href="https://raw.githubusercontent.com/nightcracker/deps/master/deps.py">single file</a> that can
+            live within your poject and requires no further installation.</p>
+
+            <h3 id="a:introduction">Introduction <a class="a" href="#a:introduction">&para;</a></h3>
+            <p>With deps your workflow is similar to Make. You define <strong>rules</strong>. Each rule has an <strong>output</strong>, zero or more <strong>dependencies</strong>, and has an associated <strong>process</strong> that produces the output. After defining the rules you ask for an endresult and deps will figure out which processes need to run to satisfy all dependencies, and run them in an optimal order.</p>
+
+            <p>When starting with deps you'll first create your build script, and import deps. Then, you call <a class="api" href="#a:deps.build">deps.build</a> to ask deps to build all endresults.</p>
+            <pre><code>import deps
+
+deps.build()</code></pre>
+            <p>This script does nothing yet, because we have not defined any rules for building yet.</p>
+            <p>When you define a rule you will start by matching the <strong>output</strong>. deps attempts to match a needed resource with all rules, in the reverse order in which they were defined, until a rule is found that matches the resource. You can pass a string as the output of the rule, which will be matched as a Unix-style glob against all potential needed files. Alternatively you can pass a callback. Let's look at three examples:</p>
+            <pre><code>from __future__ import print_function # only needed in Python 2.x
+import deps
+
+def match_numbers(output):
+    try:
+        int(output)
+        return True
+    except ValueError:
+        return False
+
+deps.rule("*.c", None, print)         # 1
+deps.rule(match_numbers, None, print) # 2
+deps.rule("test.c", None, print)      # 3
+
+deps.build("test.c", "42", "x.c")</code></pre>
+            <p>All rules we defined above have no dependencies, and call <code>print</code> as the process to generate the output. Obviously <code>print</code> will fail to do that, but that doesn't matter for our example. In our above example <code>test.c</code> will be matched to rule #3, because it was defined later than the otherwise perfectly valid matching rule #1. This is a point of care: you should always define general catch-all rules first, and more specific rules later. <code>42</code> will be matched to rule #2, because the callback will return <code>True</code>. And finally <code>x.c</code> will be matched against rule #1, because it matches the glob.</p> 
+            <p>In deps all resources are assumed to be files, unless the name of the resource starts with a colon (:), then it is a virtual output. Only string equality, and not globs, will be used for matching outputs starting with a colon, but callbacks can be used if you really need pattern matching. This type of output is useful if you need to run a process that does not produce a file, for example setting an environment variable.</p>
+
+            <h3 id="a:api-documentation">API documentation <a class="a" href="#a:api-documentation">&para;</a></h3>
+
+            <dl class="function">
+                <dt id="a:deps.rule">
+                    <code>deps.</code><code class="cfname">rule</code><code>(output, dependencies, process[, run_callback])</code>
+                    <a class="a" href="#a:deps.rule">&para;</a>
+                </dt>
+                <dd>
+                <p>Adds a rule to the current environment. <code>output</code> is a string or a callable. If it's a
+                callable it will be called with a dependency as argument and should return <code>True</code> or
+                <code>False</code> depending on whether the match was succesful.</p>
+                </dd>
+            <dl>
+
+
+
+            <h3 id="a:license">License <a class="a" href="#a:license">&para;</a></h3>
+            <p>deps is released under the very liberal (GPL-compatible) <a href="http://en.wikipedia.org/wiki/Zlib_License">zlib
+                license</a>:</p>
+            <blockquote><pre>Copyright (c) 2014 Orson Peters <orsonpeters@gmail.com>
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
+
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
+
+3. This notice may not be removed or altered from any source
+   distribution.</pre></blockquote>
+        </main>
+
+        <script src="js/jquery-1.11.0.min.js"></script>
+        <script src="js/highlight.pack.js"></script>
+        <script src="js/main.js"></script>
+    </body>
+</html>
