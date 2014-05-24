@@ -39,19 +39,8 @@ h3 {
 }
 
 pre {
-    font-family: Consolas, monaco, monospace;
     line-height: 1.2em;
     font-size: 0.74em;
-}
-
-::-moz-selection {
-    background: #b3d4fc;
-    text-shadow: none;
-}
-
-::selection {
-    background: #b3d4fc;
-    text-shadow: none;
 }
 
 hr {
@@ -90,6 +79,16 @@ a:hover {
     border-bottom: 2px solid #369;
 }
 
+a.api {
+    font-family: "Courier New", Courier, "Lucida Sans Typewriter", "Lucida Typewriter", monospace;
+    border-bottom: none;
+    font-weight: bold;
+}
+
+a.api:hover {
+    border-bottom: 2px solid #369;
+}
+
 p {
     margin-top: 0;
     margin-bottom: 1em;
@@ -102,7 +101,7 @@ nav {
     margin-top: 3em;
     width: 250px;
     padding: 0;
-    padding-right: 1em;
+    margin-right: 1em;
 }
 
 nav.sticky {
@@ -161,6 +160,48 @@ nav {
 [id^=a\:]:hover a {
     visibility: visible;
 }
+
+/* line numbers */
+pre code {
+    counter-reset: linenr;
+}
+
+pre code span.linenr {
+    display: block;
+
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+pre:hover code span.linenr:before {
+    counter-increment: linenr;
+    content: counter(linenr);
+
+    position: absolute;
+    margin-left: calc(-1em - 10px - 100px);
+    width: 100px;
+    text-align: right;
+
+    color: #ccc;
+}
+
+.bitcoin {
+    font-size: 0.6em;
+    line-height: 1.4em;
+    word-wrap: break-word;
+}
+
+#github-ribbon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    border: 0;
+}
+
 
 
 
