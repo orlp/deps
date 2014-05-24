@@ -1,6 +1,7 @@
 import collections
 import fnmatch
 import os
+import sys
 
 class Deps(object):
     Rule = collections.namedtuple("Rule", ["output", "func", "deps", "should_run"])
@@ -9,10 +10,14 @@ class Deps(object):
     def __init__(self):
         self.rules = []
 
-    def rule(self, output, func, *deps, **kwargs):
+    def rule(self, output, deps, func, **kwargs):
+        if deps is None:
+            deps = []
+
         self.rules.insert(0, self.Rule(output, func, deps, kwargs.get("should_run", lambda yn: yn)))
 
     def build(self, *endresults, **kwargs):
+        endresults = self._flatten(endresults)
         parallel = kwargs.get("parallel", 4)
         max_depth = kwargs.get("max_depth", 100)
 
@@ -29,11 +34,8 @@ class Deps(object):
 
             # check if it should be run and if so, run it
             if self._should_run(process, outputs_run):
-                print("run: " + process.output)
                 result = process.func(process.output, process.deps)
                 outputs_run.add(process.output)
-            else:
-                print("dont run: " + process.output)
             outputs_handled.add(process.output)
 
             # notify consumers
@@ -64,21 +66,23 @@ class Deps(object):
                 consumers[dep].append(process)
                 unresolved_deps.append(dep)
 
-            print(len(unresolved_deps))
-
             if len(unresolved_deps) > max_depth:
                 raise Exception("max depth exceeded while attempting to resolve resource \"{}\"".format(dep))
 
         return processes, consumers
 
     def _get_process_for_dep(self, dep):
-        for process in self.processes:
-            if (
-                hasattr(process.output, "__call__") and process.output(dep) or
-                dep == process.output or
-                not dep.startswith(":") and fnmatch.fnmatch(dep, process.output)
-            ):
-                return self.Process(dep, process.func, self._format_deps(dep, process.deps), process.should_run)
+        for rule in self.rules:
+            match = False
+            if hasattr(rule.output, "__call__"):
+                match = rule.output(dep)
+            elif dep == rule.output:
+                match = True
+            elif not dep.startswith(":"):
+                match = fnmatch.fnmatch(dep, rule.output)
+
+            if match:
+                return self.Process(dep, rule.func, self._format_deps(dep, rule.deps), rule.should_run)
 
         if not dep.startswith(":") and os.path.exists(dep):
             return self.Process(dep, lambda out, deps: None, [], lambda yn: yn)
@@ -129,11 +133,23 @@ class Deps(object):
 
         return process.should_run(run)
 
+    def _flatten(self, obj):
+        if self._is_str(obj):
+            return [obj]
+
+        return sum((self._flatten(x) for x in obj), [])
+
+    def _is_str(self, obj):
+        if sys.version_info[0] < 3:
+            return isinstance(obj, basestring)
+        else:
+            return isinstance(obj, str)
+
 
 _main_deps = Deps()
 
-def process(*args, **kwargs):
-    _main_deps.process(*args, **kwargs)
+def rule(*args, **kwargs):
+    _main_deps.rule(*args, **kwargs)
 
 def build(*args, **kwargs):
     _main_deps.build(*args, **kwargs)

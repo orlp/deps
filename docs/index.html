@@ -17,20 +17,21 @@
         <script src="js/modernizr-2.6.2.min.js"></script>
     </head>
     <body>
-        <a href="https://github.com/nightcracker/deps"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+        <a href="https://github.com/nightcracker/deps"><img id="github-ribbon" src="img/github_ribbon.png" alt="Fork me on GitHub"></a>
 
         <header>
             <h1 id="a:deps">deps <a class="a" href="#">&para;</a></h1>
             <h2>A powerful make replacement</h2>
             <nav>
                 <ul>
+                    <li>Index:</li>
                     <li><a href="#">deps</a></li>
                     <li><a href="#a:introduction">Introduction</a></li>
                     <li><a href="#a:api-documentation">API documentation</a></li>
+                    <li><a href="#a:license">License</a></li>
                     <li><br></li>
                     <li>Donate Bitcoin:</li>
                     <li><p class="bitcoin">1HP4G3mcMrTztmpyUysNvs2dFa2CNForpF</p></li>
-                    <li><img src="http://i.imgur.com/EoQ5nwV.png" alt="bitcoin donation QR code"></li>
                 </ul>
             </nav>
         </header>
@@ -51,16 +52,37 @@
             live within your poject and requires no further installation.</p>
 
             <h3 id="a:introduction">Introduction <a class="a" href="#a:introduction">&para;</a></h3>
-            <p>With deps you work in a similar pattern to Make. You define <strong>rules</strong>. Each rule has an
-            <strong>output</strong>, zero or more <strong>dependencies</strong>, and a <strong>process</strong> that
-            produces the output. After defining the rules you ask for an endresult and deps will figure out which
-            processes need to run to satisfy all dependencies, and run them in an optimal order.</p>
+            <p>With deps your workflow is similar to Make. You define <strong>rules</strong>. Each rule has an <strong>output</strong>, zero or more <strong>dependencies</strong>, and has an associated <strong>process</strong> that produces the output. After defining the rules you ask for an endresult and deps will figure out which processes need to run to satisfy all dependencies, and run them in an optimal order.</p>
+
+            <p>When starting with deps you'll first create your build script, and import deps. Then, you call <a class="api" href="#a:deps.build">deps.build</a> to ask deps to build all endresults.</p>
+            <pre><code>import deps
+
+deps.build()</code></pre>
+            <p>This script does nothing yet, because we have not defined any rules for building yet.</p>
+            <p>When you define a rule you will start by matching the <strong>output</strong>. deps attempts to match a needed resource with all rules, in the reverse order in which they were defined, until a rule is found that matches the resource. You can pass a string as the output of the rule, which will be matched as a Unix-style glob against all potential needed files. Alternatively you can pass a callback. Let's look at three examples:</p>
+            <pre><code>from __future__ import print_function # only needed in Python 2.x
+import deps
+
+def match_numbers(output):
+    try:
+        int(output)
+        return True
+    except ValueError:
+        return False
+
+deps.rule("*.c", None, print)         # 1
+deps.rule(match_numbers, None, print) # 2
+deps.rule("test.c", None, print)      # 3
+
+deps.build("test.c", "42", "x.c")</code></pre>
+            <p>All rules we defined above have no dependencies, and call <code>print</code> as the process to generate the output. Obviously <code>print</code> will fail to do that, but that doesn't matter for our example. In our above example <code>test.c</code> will be matched to rule #3, because it was defined later than the otherwise perfectly valid matching rule #1. This is a point of care: you should always define general catch-all rules first, and more specific rules later. <code>42</code> will be matched to rule #2, because the callback will return <code>True</code>. And finally <code>x.c</code> will be matched against rule #1, because it matches the glob.</p> 
+            <p>In deps all resources are assumed to be files, unless the name of the resource starts with a colon (:), then it is a virtual output. Only string equality, and not globs, will be used for matching outputs starting with a colon, but callbacks can be used if you really need pattern matching. This type of output is useful if you need to run a process that does not produce a file, for example setting an environment variable.</p>
 
             <h3 id="a:api-documentation">API documentation <a class="a" href="#a:api-documentation">&para;</a></h3>
 
             <dl class="function">
                 <dt id="a:deps.rule">
-                    <tt>deps.</tt><tt class="cfname">rule</tt><tt>(output, dependencies, process[, run_callback])</tt>
+                    <code>deps.</code><code class="cfname">rule</code><code>(output, dependencies, process[, run_callback])</code>
                     <a class="a" href="#a:deps.rule">&para;</a>
                 </dt>
                 <dd>
@@ -70,22 +92,31 @@
                 </dd>
             <dl>
 
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam. Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta. Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. </p>
 
-<p>Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor. Pellentesque nibh. Aenean quam. In scelerisque sem at dolor. Maecenas mattis. Sed convallis tristique sem. Proin ut ligula vel nunc egestas porttitor. <b>Curabitur tortor</b>. Morbi lectus risus, iaculis vel, suscipit quis, luctus non, massa. <i>Lorem ipsum dolor sit amet, consectetur adipiscing elit</i>. Fusce ac turpis quis ligula lacinia aliquet. </p>
 
-<p>Mauris ipsum. Nulla metus metus, ullamcorper vel, tincidunt sed, euismod in, nibh. Quisque volutpat condimentum velit. <b>Sed dignissim lacinia nunc</b>. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Nam nec ante. Sed lacinia, urna non tincidunt mattis, tortor neque adipiscing diam, a cursus ipsum ante quis turpis. Nulla facilisi. <b>Proin ut ligula vel nunc egestas porttitor</b>. Ut fringilla. Suspendisse potenti. Nunc feugiat mi a tellus consequat imperdiet. Vestibulum sapien. <i>In scelerisque sem at dolor</i>. Proin quam. Etiam ultrices. </p>
+            <h3 id="a:license">License <a class="a" href="#a:license">&para;</a></h3>
+            <p>deps is released under the very liberal (GPL-compatible) <a href="http://en.wikipedia.org/wiki/Zlib_License">zlib
+                license</a>:</p>
+            <blockquote><pre>Copyright (c) 2014 Orson Peters <orsonpeters@gmail.com>
 
-<p>Suspendisse in justo eu magna luctus suscipit. Sed lectus. Integer euismod lacus luctus magna. <i>Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos</i>. Quisque cursus, metus vitae pharetra auctor, sem massa mattis sem, at interdum magna augue eget diam. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Morbi lacinia molestie dui. Praesent blandit dolor. Sed non quam. In vel mi sit amet augue congue elementum. <i>Fusce ac turpis quis ligula lacinia aliquet</i>. Morbi in ipsum sit amet pede facilisis laoreet. Donec lacus nunc, viverra nec, blandit vel, egestas et, augue. Vestibulum tincidunt malesuada tellus. Ut ultrices ultrices enim. Curabitur sit amet mauris. Morbi in dui quis est pulvinar ullamcorper. </p>
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
 
-<p>Nulla facilisi. Integer lacinia sollicitudin massa. Cras metus. Sed aliquet risus a tortor. Integer id quam. Morbi mi. Quisque nisl felis, venenatis tristique, dignissim in, ultrices sit amet, augue. Proin sodales libero eget ante. Nulla quam. Aenean laoreet. <i>Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Morbi lacinia molestie dui</i>. Vestibulum nisi lectus, commodo ac, facilisis ac, ultricies eu, pede. </p>
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
 
-            <pre><code>import deps
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would
+   be appreciated but is not required.
 
-deps.rule("*.o", "{p}.c", deps.c_compiler)
-deps.rule("hello" + deps.executable_ext, "hello.o", deps.c_linker)
+2. Altered source versions must be plainly marked as such, and must not
+   be misrepresented as being the original software.
 
-deps.build("hello" + deps.executable_ext)</code></pre>
+3. This notice may not be removed or altered from any source
+   distribution.</pre></blockquote>
         </main>
 
         <script src="js/jquery-1.11.0.min.js"></script>
